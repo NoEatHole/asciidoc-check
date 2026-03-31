@@ -1,6 +1,6 @@
 = Changelog
 
-:description: Release history for AsciiDoc Diagnostics.
+:description: Release History for AsciiDoc Validation.
 :toc: left
 :icons: font
 
@@ -12,7 +12,7 @@ No unreleased changes at this time.
 
 == 1.0.0
 
-Initial release of AsciiDoc Diagnostics.
+Initial release of AsciiDoc Validation.
 
 === Added
 
