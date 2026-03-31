@@ -4,6 +4,8 @@ This script is designed to be a lightweight, zero-dependency tool that can be ea
 
 Goal:
 Improving a developer/SME experience, when adopting a docs-as-code workflow, by preventing documentation errors early and broken docs in production.
+Broken or inconsistent documentation slows down developers and increases onboarding time. 
+This tool ensures documentation quality at scale by integrating into CI pipelines.
 
 ---
 
