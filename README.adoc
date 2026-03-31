@@ -1,6 +1,9 @@
 = AsciiDoc Diagnostics
 
-A zero-dependency Python script that scans `.adoc` files recursively and reports structural issues to the terminal and to a timestamped AsciiDoc log file.
+This script is designed to be a lightweight, zero-dependency tool that can be easily integrated into any documentation workflow, whether it's run manually during development or automatically in CI pipelines.
+
+Goal:
+Improving a developer/SME experience, when adopting a docs-as-code workflow, by preventing documentation errors early and broken docs in production.
 
 ---
 
@@ -8,6 +11,7 @@ A zero-dependency Python script that scans `.adoc` files recursively and reports
 
 * <<Requirements>>
 * <<Installation>>
+* <<Quickstart>>
 * <<Usage>>
 * <<What It Detects>>
 * <<Output>>
@@ -40,6 +44,27 @@ your-repo/
 ....
 
 ---
+
+== Quickstart
+
+To see the script in action immediately, follow these three steps:
+
+. **Download the Script.** Save `asciidoc-check.py` into a `scripts/` folder in your project root.
+
+. **Run the Diagnostic.**
++
+[source,bash]
+----
+python scripts/asciidoc-check.py
+----
+
+. **Check the Results.** Review the terminal output for immediate issues or open the auto-generated log file:
+   `./modules/pages/log/YYYY-MM-DD-HH-MM-SS-asciidoc-check.adoc`
+
+[NOTE]
+====
+If you are using this in a new project, the script will automatically create the `log/` directory for you on its first run.
+====
 
 == Usage
 
@@ -191,7 +216,7 @@ Add the following entry to your workspace `.vscode/tasks.json` to run the script
       "type": "shell",
       "command": "python",
       "args": [
-        "${workspaceFolder}/scripts/adoc-check.py"
+        "${workspaceFolder}/scripts/asciidoc-check.py"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -296,7 +321,7 @@ You can run the script in any CI environment that supports Python 3.10 or later.
 
 === GitHub Actions
 
-Add the following workflow file to your repository at `.github/workflows/adoc-check.yml`:
+Add the following workflow file to your repository at `.github/workflows/asciidoc-check.yml`:
 
 [source,yaml]
 ----
@@ -309,7 +334,7 @@ on:
       - main
 
 jobs:
-  adoc-check:
+  asciidoc-check:
     runs-on: ubuntu-latest
 
     steps:
@@ -322,13 +347,13 @@ jobs:
           python-version: '3.12'
 
       - name: Run AsciiDoc Diagnostics
-        run: python scripts/adoc-check.py
+        run: python scripts/asciidoc-check.py
 
       - name: Upload log file
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: adoc-check-log
+          name: asciidoc-check-log
           path: ./modules/pages/log/
 ----
 
@@ -344,14 +369,14 @@ Running diagnostics without failing the pipeline is useful during initial adopti
 [source,yaml]
 ----
 - name: Run AsciiDoc Diagnostics (report only)
-  run: python scripts/adoc-check.py || true
+  run: python scripts/asciidoc-check.py || true
 ----
 
 ---
 
 == Configuration
 
-The following values are defined at the top of `adoc-check.py` and can be edited directly:
+The following values are defined at the top of `asciidoc-check.py` and can be edited directly:
 
 [cols="1,1,2", options="header"]
 |===
