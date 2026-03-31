@@ -1,0 +1,39 @@
+= Changelog
+
+:description: Release history for AsciiDoc Diagnostics.
+:toc: left
+:icons: font
+
+All notable changes to this project are documented here.
+
+== Unreleased
+
+No unreleased changes at this time.
+
+== 1.0.0
+
+Initial release of AsciiDoc Diagnostics.
+
+=== Added
+
+* Recursive `.adoc` file scanning from the working directory
+* Detection: stray block delimiters (`====`, `----`, `++++`, `****`) excluding section titles
+* Detection: duplicate explicit anchors (`[id="..."]`)
+* Detection: duplicate figure IDs (`fig-*`)
+* Detection: duplicate figure titles
+* Detection: duplicate table IDs (`tbl-*`)
+* Detection: duplicate table titles
+* Detection: duplicate section anchors (`[#anchor]`)
+* Detection: duplicate section IDs, excluding figure and table IDs
+* Detection: section titles with leading spaces
+* Detection: section titles found inside delimited blocks
+* Detection: missing blank lines before section titles
+* Detection: invalid nesting levels (`======` or deeper)
+* Detection: adjacent section titles indicating broken include directives
+* Terminal output for all findings
+* Timestamped AsciiDoc log file written to `./modules/pages/log/`
+* Automatic creation of the log directory if it does not exist
+* VS Code `tasks.json` integration with `pwsh`, `-NoProfile`, and `-ExecutionPolicy Bypass`
+* Optional VS Code keyboard shortcut configuration via user `keybindings.json`
+* GitHub Actions workflow example
+* Azure DevOps pipeline example

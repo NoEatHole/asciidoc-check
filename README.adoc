@@ -1,0 +1,382 @@
+= AsciiDoc Diagnostics
+
+A zero-dependency Python script that scans `.adoc` files recursively and reports structural issues to the terminal and to a timestamped AsciiDoc log file.
+
+---
+
+== Table of Contents
+
+* <<Requirements>>
+* <<Installation>>
+* <<Usage>>
+* <<What It Detects>>
+* <<Output>>
+* <<VS Code Integration>>
+* <<CI Integration>>
+* <<Configuration>>
+* <<Contributing>>
+
+---
+
+== Requirements
+
+* Python 3.10 or later
+* No third-party packages required. 
+It only uses the standard library.
+
+---
+
+== Installation
+
+Clone the repository and place `asciidoc-check.py` in the `scripts/` directory of your documentation project:
+
+....
+your-repo/
+├── scripts/
+│   └── asciidoc-check.py
+└── modules/
+    └── pages/
+        └── log/          ← created automatically on first run
+....
+
+---
+
+== Usage
+
+Run the script from the root of your repository:
+
+[source,bash]
+----
+python scripts/asciidoc-check.py
+----
+
+The script scans every `.adoc` file recursively from the current working directory. 
+It prints all findings to the terminal and writes an identical report to a timestamped log file.
+
+**Exit codes:**
+
+[cols="1,3", options="header"]
+|===
+| Code | Meaning
+| `0`  | No issues found
+| `1`  | One or more issues detected
+|===
+
+This makes the script suitable as a CI gate.
+A non-zero exit code will fail the pipeline step.
+
+---
+
+== What It Detects
+
+The script runs 13 detection rules across all scanned files.
+
+=== Rule 1 — Stray Block Delimiters
+
+Detects `====`, `----`, `++++`, and `****` delimiter lines that are not part of a matched open/close pair. 
+An unclosed delimiter causes Asciidoctor to misinterpret everything that follows.
+
+=== Rule 2 — Duplicate Explicit Anchors
+
+Detects `[id="..."]` anchors that appear more than once across all scanned files. 
+Duplicate IDs cause unpredictable cross-reference resolution.
+
+=== Rule 3 — Duplicate Figure IDs
+
+Detects `fig-*` IDs that appear more than once. 
+Reports every file and line number where each duplicate occurs.
+
+=== Rule 4 — Duplicate Figure Titles
+
+Detects figure caption lines (`.Figure ...`) that are repeated across files.
+
+=== Rule 5 — Duplicate Table IDs
+
+Detects `tbl-*` IDs that appear more than once across all scanned files.
+
+=== Rule 6 — Duplicate Table Titles
+
+Detects table caption lines (`.Table ...`) that are repeated across files.
+
+=== Rule 7 — Duplicate Section Anchors
+
+Detects `[#anchor]` markers that appear more than once. 
+These are used for cross-referencing as duplicates cause ambiguous links.
+
+=== Rule 8 — Duplicate Section IDs
+
+Detects repeated section IDs that are not figure or table IDs (i.e. not prefixed with `fig-` or `tbl-`).
+
+=== Rule 9 — Section Titles with Leading Spaces
+
+Detects section title lines preceded by one or more spaces. 
+Asciidoctor does not recognise indented titles and renders them as plain paragraphs instead.
+
+=== Rule 10 — Section Titles Inside Blocks
+
+Detects lines that look like section titles but appear inside a delimited block. 
+Inside a block, these lines are treated as literal content and are never rendered as headings.
+
+=== Rule 11 — Missing Blank Line Before Section Title
+
+Detects section titles that are not preceded by a blank line. 
+A missing blank line can cause the title to merge with the preceding paragraph.
+
+=== Rule 12 — Invalid Nesting Levels
+
+Detects section titles at level 6 or deeper (`======`). 
+AsciiDoc only supports levels 0 to 5. 
+Deeper levels are silently ignored by Asciidoctor.
+
+=== Rule 13 — Adjacent Section Titles
+
+Detects two or more consecutive section titles with no content between them. 
+This pattern almost always indicates a missing or broken `include::` directive.
+
+---
+
+== Output
+
+The output is divided into two parts: the terminal report and the log file.
+
+=== Terminal
+
+All findings are printed to standard output as the script runs, grouped by rule:
+
+[source,text]
+----
+AsciiDoc Diagnostics — 2025-06-14-09-32-11
+Scanned 42 file(s).
+
+Rule 1  — Stray Block Delimiters  (2 finding(s))
+  modules/pages/install.adoc:42  Unclosed block delimiter '===='
+  modules/pages/config.adoc:117  Unclosed block delimiter '----'
+
+Rule 2  — Duplicate Explicit Anchors  (no issues found)
+
+...
+
+------------------------------------------------------------
+Total issues found: 2
+----
+
+=== Log File
+
+An identical report is written to:
+
+`./modules/pages/log/YYYY-MM-DD-HH-MM-SS-asciidoc-check.adoc`
+
+The log is a valid AsciiDoc document with section headings and literal blocks, so it can be rendered by Asciidoctor or published through Antora without modification.
+
+The log directory is created automatically if it does not exist. 
+Each run produces a new file and old logs are never overwritten.
+
+---
+
+== VS Code Integration
+
+The script can be run directly from the VS Code Command Palette or as a build task, allowing you to check for issues without leaving your editor.
+
+=== Running via the Command Palette
+
+Add the following entry to your workspace `.vscode/tasks.json` to run the script as a VS Code task:
+
+[source,json]
+----
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run AsciiDoc Diagnostics",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/scripts/adoc-check.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
+----
+
+[NOTE]
+====
+. In case the `tasks.json` file already contains other tasks, simply add the new task object to the existing `"tasks"` array.
+. In case the task.json file does not exist, you can create it manually in the `.vscode` directory at the root of your workspace.
+. If your system uses `python3` instead of `python` to invoke Python 3, change the `"command"` value accordingly.
+. The `${workspaceFolder}` variable ensures the command runs from the root of your project, which is necessary for the script to find the correct files and write logs to the expected location.
+====
+
+To run the task:
+
+1. Open the Command Palette: `Ctrl+Shift+P` (Windows / Linux) or `Cmd+Shift+P` (macOS).
+2. Type **Tasks: Run Task**.
+3. Select **Run AsciiDoc Diagnostics**.
+
+The output appears in the integrated terminal.
+
+=== Adding a Keyboard Shortcut
+
+[NOTE]
+====
+A keyboard shortcut is optional as the script is fully usable without one. However, a shortcut allows you to run diagnostics with a single key combination, which can speed up your workflow.
+====
+
+[IMPORTANT]
+====
+Task shortcuts must be added to your **user** `keybindings.json`, not to `.vscode/keybindings.json` inside the workspace. VS Code does not support task shortcuts in workspace keybindings.
+====
+
+**Step 1 — Open the Keyboard Shortcuts (JSON) File**
+
+Open the Command Palette and select: `Preferences: Open Keyboard Shortcuts (JSON)`.
+
+[WARNING]
+====
+Do **not** select **Preferences: Open Default Keyboard Shortcuts (JSON)**. That file is read-only and maintained by VS Code. Any edits to it are silently ignored.
+====
+
+**Step 2 — Add the Binding**
+
+Add the following entry to your `keybindings.json`:
+
+[source,json]
+----
+[
+  {
+    "key": "ctrl+shift+alt+d",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Run AsciiDoc Diagnostics",
+    "when": "true"
+  }
+]
+----
+
+[NOTE]
+====
+You can substitute `ctrl+shift+alt+d` with any key combination that does not conflict with existing shortcuts.
+====
+
+**Why `"when": "true"` Is Required**
+
+The `when` clause controls which editor contexts activate the shortcut. 
+Setting it to `"true"` ensures the binding fires unconditionally, regardless of which panel or editor is currently focused. 
+Without it, the shortcut may silently do nothing depending on context.
+
+**Windows Note — Avoid `Ctrl+Alt` Combinations**
+
+On Windows, the `AltGr` key is internally translated to `Ctrl+Alt`. 
+Any shortcut using `Ctrl+Alt+<key>` may conflict with your keyboard layout. 
+Use `Ctrl+Shift` combinations to avoid this.
+
+=== Troubleshooting the Shortcut
+
+If the shortcut does not fire but the task runs correctly via the Command Palette:
+
+1. **Check the file location.** The binding must be in your user `keybindings.json`. Open it via **Preferences: Open Keyboard Shortcuts (JSON)** and confirm the entry is there.
+2. **Check for conflicts.** Open **Preferences: Open Keyboard Shortcuts** (`Ctrl+K Ctrl+S`) and search for your chosen key combination. If another command is bound to the same key, it will take priority.
+3. **Confirm `"when": "true"` is present.** A missing or incorrect `when` clause is the most common reason a shortcut silently fails.
+4. **Confirm the task label matches exactly.** The `"args"` value in the keybinding must match the `"label"` in `tasks.json` character for character, including capitalisation.
+5. **Reload the VS Code window.** After editing `keybindings.json`, open the Command Palette and run **Developer: Reload Window**.
+6. **Try a different key combination.** On Windows, try `Ctrl+Shift+A` or another `Ctrl+Shift` pair to rule out an `AltGr` conflict.
+
+---
+
+== CI Integration
+
+You can run the script in any CI environment that supports Python 3.10 or later.
+
+=== GitHub Actions
+
+Add the following workflow file to your repository at `.github/workflows/adoc-check.yml`:
+
+[source,yaml]
+----
+name: AsciiDoc Diagnostics
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  adoc-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run AsciiDoc Diagnostics
+        run: python scripts/adoc-check.py
+
+      - name: Upload log file
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adoc-check-log
+          path: ./modules/pages/log/
+----
+
+[NOTE]
+====
+The `if: always()` condition on the upload step ensures the log artifact is saved even when the script exits with code `1` (issues found).
+====
+
+**Running in Report-Only Mode (No Build Failure)**
+
+Running diagnostics without failing the pipeline is useful during initial adoption when existing issues are known. Append `|| true` to the script command:
+
+[source,yaml]
+----
+- name: Run AsciiDoc Diagnostics (report only)
+  run: python scripts/adoc-check.py || true
+----
+
+---
+
+== Configuration
+
+The following values are defined at the top of `adoc-check.py` and can be edited directly:
+
+[cols="1,1,2", options="header"]
+|===
+| Variable | Default | Description
+| `SCAN_EXTENSION` | `.adoc` | File extension to scan
+| `LOG_DIR` | `./modules/pages/log` | Directory where log files are written
+|===
+
+[NOTE]
+====
+No external configuration file is required.
+====
+
+---
+
+== Contributing
+
+To add a new detection rule:
+
+1. Add a new `check_*` function following the pattern of existing checks.
+2. Register it in `scan_files()` (per-file rules) or in `build_report()` (cross-file rules).
+3. Add a label entry to `RULE_LABELS` so it appears in the terminal output and log.
+4. Update this README with a description of the new rule under <<What It Detects>>.
+
+[NOTE]
+====
+The script never modifies source `.adoc` files under any circumstances.
+====
