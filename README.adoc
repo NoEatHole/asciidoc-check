@@ -7,6 +7,11 @@ This documentation validation tool for docs-as-code pipelines, designed to impro
 Broken or inconsistent documentation slows down developers and increases onboarding time. 
 This tool ensures documentation quality at scale by integrating into CI pipelines.
 
+== Free Use and Attribution
+
+This tool can be used, copied, and modified freely. 
+A mention of this repository when reusing/modifying its content for one's own purpose is highly appreciated.
+
 ---
 
 == Table of Contents
